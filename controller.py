@@ -9,15 +9,24 @@ class Robot():
         self.port = port
         self.serial = serial.Serial(port)
         self.send("import pyb")
-        # TODO Add actual pin numbers -- you know, so it like works and stuff
-        self.send("yaw_servo = pyb.pin(Y1)")
-        self.send("bottom_pitch_servo = pyb.pin(Y2)")
-        self.send("middle_pitch_servo = pyb.pin(Y3)")
-        self.send("top_pitch_servo = pyb.pin(Y4)")
-
+        self.send("yaw_servo = pyb.Servo(1)")
+        self.send("bottom_pitch_servo = pyb.Servo(2)")
+        self.send("middle_pitch_servo = pyb.Servo(3)")
+        self.send("top_pitch_servo = pyb.Servo(4)")
+        self.servos = []
+        self.yaw_servo = 0
+        self.bottom_pitch_servo = 0
+        self.middle_pitch_servo = 0
+        self.top_pitch_servo = 0
+        self.servos.append(self.yaw_servo)
+        self.servos.append(self.bottom_pitch_servo)
+        self.servos.append(self.middle_pitch_servo)
+        self.servos.append(self.top_pitch_servo)
+        self.center()
     def send(self, comm):
         self.serial.write((comm + '\r\t\n').encode())
 
+    # TODO udlr functions
     def left(self):
         self.send()
 
@@ -30,14 +39,20 @@ class Robot():
     def down(self):
         pass
 
+    def center(self):
+        self.yaw_servo = 0
+        self.bottom_pitch_servo = 0
+        self.middle_pitch_servo = 0
+        self.top_pitch_servo = 0
+
     def test_led(self):
         self.send('LED1.toggle()')
 
     def update(self):
-        # TODO fix this
-        self.send('yaw_servo.angle(' + self.yaw_servo_angle + ')')
-        self.send('yaw_servo.angle(' + self.yaw_servo_angle + ')')
-        self.send('yaw_servo.angle(' + self.yaw_servo_angle + ')')
+        self.send('yaw_servo.angle(' + str(self.yaw_servo) + ')')
+        self.send('yaw_servo.angle(' + str(self.bottom_pitch_servo) + ')')
+        self.send('yaw_servo.angle(' + str(self.middle_pitch_servo) + ')')
+        self.send('yaw_servo.angle(' + str(self.top_pitch_servo) + ')')
 
 robot = Robot('COM3')
 command = {
