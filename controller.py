@@ -1,7 +1,22 @@
+import math
+
 import serial
 import pygame
 
+
+move_amount = 1
 __author__ = 'wing2048'
+YAW_INDICATOR_CENTER = (600, 400)
+PITCH_INDICATOR_CENTER = (300, 400)
+
+
+class Servo():
+    def __init__(self, servo_id):
+        self.id = servo_id
+        self.angle = 0
+
+    def set_angle(self, angle):
+        self.angle = angle
 
 
 class Robot():
@@ -14,45 +29,96 @@ class Robot():
         self.send("middle_pitch_servo = pyb.Servo(3)")
         self.send("top_pitch_servo = pyb.Servo(4)")
         self.servos = []
-        self.yaw_servo = 0
-        self.bottom_pitch_servo = 0
-        self.middle_pitch_servo = 0
-        self.top_pitch_servo = 0
-        self.servos.append(self.yaw_servo)
-        self.servos.append(self.bottom_pitch_servo)
-        self.servos.append(self.middle_pitch_servo)
-        self.servos.append(self.top_pitch_servo)
+        self.yaw_servo = Servo(1)
+        self.bottom_pitch_servo = Servo(2)
+        self.middle_pitch_servo = Servo(3)
+        self.top_pitch_servo = Servo(4)
         self.center()
+
     def send(self, comm):
         self.serial.write((comm + '\r\t\n').encode())
 
-    # TODO udlr functions
     def left(self):
-        self.send()
+        # self.send('yaw_servo.angle()')
+        self.yaw_servo.angle -= move_amount
+        if self.yaw_servo.angle < -90:
+            self.yaw_servo.angle = -90
 
     def right(self):
-        pass
+        self.yaw_servo.angle += move_amount
+        if self.yaw_servo.angle > 90:
+            self.yaw_servo.angle = 90
 
     def up(self):
-        pass
+        self.bottom_pitch_servo.angle += move_amount
+        if self.bottom_pitch_servo.angle > 90:
+            self.bottom_pitch_servo.angle = 90
 
     def down(self):
-        pass
+        self.bottom_pitch_servo.angle -= move_amount
+        if self.bottom_pitch_servo.angle < -90:
+            self.bottom_pitch_servo.angle = -90
+
+    def middle_up(self):
+        self.middle_pitch_servo.angle += move_amount
+        if self.middle_pitch_servo.angle > 90:
+            self.middle_pitch_servo.angle = 90
+
+    def middle_down(self):
+        self.middle_pitch_servo.angle -= move_amount
+        if self.middle_pitch_servo.angle < -90:
+            self.middle_pitch_servo.angle = -90
+
+    def top_up(self):
+        self.top_pitch_servo.angle += move_amount
+        if self.top_pitch_servo.angle > 90:
+            self.top_pitch_servo.angle = 90
+
+    def top_down(self):
+        self.top_pitch_servo.angle -= move_amount
+        if self.top_pitch_servo.angle < -90:
+            self.top_pitch_servo.angle = -90
 
     def center(self):
-        self.yaw_servo = 0
-        self.bottom_pitch_servo = 0
-        self.middle_pitch_servo = 0
-        self.top_pitch_servo = 0
+        self.yaw_servo.angle = 0
+        self.bottom_pitch_servo.set_angle(0)
+        self.middle_pitch_servo.set_angle(0)
+        self.top_pitch_servo.set_angle(0)
 
     def test_led(self):
         self.send('LED1.toggle()')
 
-    def update(self):
-        self.send('yaw_servo.angle(' + str(self.yaw_servo) + ')')
-        self.send('yaw_servo.angle(' + str(self.bottom_pitch_servo) + ')')
-        self.send('yaw_servo.angle(' + str(self.middle_pitch_servo) + ')')
-        self.send('yaw_servo.angle(' + str(self.top_pitch_servo) + ')')
+    def update(self, screen):
+        self.send('yaw_servo.angle(' + str(self.yaw_servo.angle) + ')')
+        self.send('yaw_servo.angle(' + str(self.bottom_pitch_servo.angle) + ')')
+        self.send('yaw_servo.angle(' + str(self.middle_pitch_servo.angle) + ')')
+        self.send('yaw_servo.angle(' + str(self.top_pitch_servo.angle) + ')')
+        screen.fill((255, 255, 255))
+        # TODO: Fix ground boundaries
+        yaw_line_end = (YAW_INDICATOR_CENTER[0] + 100 * math.cos(math.radians(self.yaw_servo.angle - 90)),
+                        YAW_INDICATOR_CENTER[1] + 100 * math.sin(math.radians(self.yaw_servo.angle - 90)))
+        pygame.draw.line(screen, (0, 0, 0), yaw_line_end, YAW_INDICATOR_CENTER)
+        bp_line_end = (PITCH_INDICATOR_CENTER[0] + 50 * math.cos(math.radians(self.bottom_pitch_servo.angle - 90)),
+                       PITCH_INDICATOR_CENTER[1] + 50 * math.sin(math.radians(self.bottom_pitch_servo.angle - 90)))
+        mp_line_end = (bp_line_end[0] + 40 * math.cos(
+            math.radians(self.middle_pitch_servo.angle - 90 + self.bottom_pitch_servo.angle)),
+                       bp_line_end[1] + 40 * math.sin(
+                           math.radians(self.middle_pitch_servo.angle - 90 + self.bottom_pitch_servo.angle)))
+        tp_line_end = (mp_line_end[0] + 30 * math.cos(
+            math.radians(
+                self.top_pitch_servo.angle - 90 + self.middle_pitch_servo.angle + self.bottom_pitch_servo.angle)),
+                       mp_line_end[1] + 30 * math.sin(math.radians(
+                           self.top_pitch_servo.angle - 90 + self.middle_pitch_servo.angle + self.bottom_pitch_servo.angle)))
+        if mp_line_end[1] > PITCH_INDICATOR_CENTER[1]:
+            mp_line_end = (mp_line_end[0], PITCH_INDICATOR_CENTER[1])
+        if tp_line_end[1] > PITCH_INDICATOR_CENTER[1]:
+            tp_line_end = (tp_line_end[0], PITCH_INDICATOR_CENTER[1])
+        pygame.draw.line(screen, (0, 0, 0), (PITCH_INDICATOR_CENTER[0] - 50, PITCH_INDICATOR_CENTER[1]),
+                         (PITCH_INDICATOR_CENTER[0] + 50, PITCH_INDICATOR_CENTER[1]), 2)
+        pygame.draw.line(screen, (0, 0, 0), bp_line_end, PITCH_INDICATOR_CENTER)
+        pygame.draw.line(screen, (0, 0, 0), mp_line_end, bp_line_end)
+        pygame.draw.line(screen, (0, 0, 0), tp_line_end, mp_line_end)
+
 
 robot = Robot('COM3')
 command = {
@@ -60,12 +126,16 @@ command = {
     pygame.K_RIGHT: robot.right,
     pygame.K_UP: robot.up,
     pygame.K_DOWN: robot.down,
-    pygame.K_SPACE: robot.test_led
+    pygame.K_w: robot.middle_up,
+    pygame.K_s: robot.middle_down,
+    pygame.K_e: robot.top_up,
+    pygame.K_d: robot.top_down,
+    pygame.K_SPACE: robot.center
 }
 pygame.init()
 clock = pygame.time.Clock()
-screen = pygame.display.set_mode((100, 100))
-screen.fill((0, 0, 0))
+screen = pygame.display.set_mode((800, 600))
+screen.fill((255, 255, 255))
 pygame.display.flip()
 done = False
 print('Ready for input')
@@ -81,5 +151,5 @@ while not done:
         if pressed[key]:
             command[key]()
     pygame.display.flip()
-    clock.tick(60)
+    robot.update(screen)
 pygame.quit()
