@@ -13,6 +13,7 @@ TOUCH_ACCURACY = 20
 TOP_ARM_LENGTH = 30
 MIDDLE_ARM_LENGTH = 40
 BOTTOM_ARM_LENGTH = 50
+LIGHT_ANGLE = 10
 
 
 class Servo():
@@ -55,6 +56,7 @@ class Robot():
         self.bottom_pitch_servo = Servo(2)
         self.middle_pitch_servo = Servo(3)
         self.top_pitch_servo = Servo(4)
+        self.tool_servo = Servo(5)
         self.tool = Tool()
         self.center()
         self.joints = []
@@ -67,13 +69,11 @@ class Robot():
         self.yaw_servo.angle -= amount
         if self.yaw_servo.angle < -90:
             self.yaw_servo.angle = -90
-        print(self.yaw_servo.angle)
 
     def right(self, amount=move_amount):
         self.yaw_servo.angle += amount
         if self.yaw_servo.angle > 90:
             self.yaw_servo.angle = 90
-        print(self.yaw_servo.angle)
 
     def up(self, amount=move_amount):
         self.bottom_pitch_servo.angle += amount
@@ -105,12 +105,23 @@ class Robot():
         if self.top_pitch_servo.angle < -90:
             self.top_pitch_servo.angle = -90
 
+    def tool_up(self, amount=move_amount):
+        self.tool_servo.angle += amount
+        if self.tool_servo.angle < -90:
+            self.tool_servo.angle = -90
+
+    def tool_down(self, amount=move_amount):
+        self.tool_servo.angle -= amount
+        if self.tool_servo.angle < -90:
+            self.tool_servo.angle = -90
+
     def center(self):
         self.yaw_servo.angle = 0
         self.yaw_servo.set_angle(0)
         self.bottom_pitch_servo.set_angle(0)
         self.middle_pitch_servo.set_angle(0)
         self.top_pitch_servo.set_angle(0)
+        self.tool_servo.set_angle(0)
 
     def test_led(self):
         self.send('LED1.toggle()')
@@ -168,13 +179,17 @@ class Robot():
         pygame.draw.circle(screen, (0, 0, 0), PITCH_INDICATOR_CENTER, 3)
         pygame.draw.circle(screen, (0, 0, 0), bp_line_end, 3)
         pygame.draw.circle(screen, (0, 0, 0), mp_line_end, 3)
+        compensation = self.top_pitch_servo.angle + self.middle_pitch_servo.angle + self.bottom_pitch_servo.angle + self.tool_servo.angle - 90
         if self.tool.is_on:
+            pygame.draw.polygon(screen, (255, 255, 0), (tp_line_end,
+                                                        (tp_line_end[0]+30*math.cos(math.radians(LIGHT_ANGLE+compensation)), tp_line_end[1]+30*math.sin(math.radians(LIGHT_ANGLE+compensation))),
+                                                        (tp_line_end[0]+30*math.cos(math.radians(-LIGHT_ANGLE+compensation)), tp_line_end[1]+30*math.sin(math.radians(-LIGHT_ANGLE+compensation)))))
             pygame.draw.rect(screen, (0, 255, 0), (screen.get_rect().width / 2 - 45, 205, 90, 40))
-            pygame.draw.circle(screen, (0, 0, 0), tp_line_end, 3)
-        else:
-            pygame.draw.rect(screen, (255, 0, 0), (screen.get_rect().width / 2 - 45, 205, 90, 40))
             pygame.draw.rect(screen, (0, 0, 0),
                              (tp_line_end[0] - 2, tp_line_end[1] - 2, 5, 5))
+        else:
+            pygame.draw.rect(screen, (255, 0, 0), (screen.get_rect().width / 2 - 45, 205, 90, 40))
+            pygame.draw.circle(screen, (0, 0, 0), tp_line_end, 3)
         tool_text = font.render('TOOL', 25, (0, 0, 0))
         pitch_text = font.render('ARM PITCH', 25, (0, 0, 0))
         yaw_text = font.render('YAW', 25, (0, 0, 0))
@@ -218,11 +233,13 @@ command = {
     pygame.K_w: robot.top_up,
     pygame.K_s: robot.top_down,
     pygame.K_c: robot.center,
+    pygame.K_e: robot.tool_up,
+    pygame.K_d: robot.tool_down
 }
 pygame.init()
 font = pygame.font.SysFont('Courier', 25)
 clock = pygame.time.Clock()
-screen = pygame.display.set_mode((500, 300))
+screen = pygame.display.set_mode((500, 300), pygame.FULLSCREEN)
 screen.fill((255, 255, 255))
 pygame.display.flip()
 done = False
@@ -253,7 +270,6 @@ while not done:
             if event.key == pygame.K_ESCAPE:
                 done = True
             if event.key == pygame.K_SPACE:
-                print(robot.tool.is_on)
                 robot.tool.toggle()
     if moving:
         while pygame.mouse.get_pressed()[0]:
@@ -297,4 +313,5 @@ while not done:
             command[key]()
     pygame.display.flip()
     robot.update(screen)
+screen = pygame.display.set_mode((500, 300))
 pygame.quit()
