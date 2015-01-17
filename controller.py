@@ -6,8 +6,8 @@ import pygame
 
 move_amount = 1
 __author__ = 'wing2048'
-YAW_INDICATOR_CENTER = (600, 400)
-PITCH_INDICATOR_CENTER = (300, 400)
+YAW_INDICATOR_CENTER = (360, 150)
+PITCH_INDICATOR_CENTER = (130, 150)
 
 
 class Servo():
@@ -97,7 +97,7 @@ class Robot():
         # TODO: Fix ground boundaries
         yaw_line_end = (YAW_INDICATOR_CENTER[0] + 100 * math.cos(math.radians(self.yaw_servo.angle - 90)),
                         YAW_INDICATOR_CENTER[1] + 100 * math.sin(math.radians(self.yaw_servo.angle - 90)))
-        pygame.draw.line(screen, (0, 0, 0), yaw_line_end, YAW_INDICATOR_CENTER)
+        yaw_line_end = (yaw_line_end[0], YAW_INDICATOR_CENTER[1] * 2 - yaw_line_end[1])
         bp_line_end = (PITCH_INDICATOR_CENTER[0] + 50 * math.cos(math.radians(self.bottom_pitch_servo.angle - 90)),
                        PITCH_INDICATOR_CENTER[1] + 50 * math.sin(math.radians(self.bottom_pitch_servo.angle - 90)))
         mp_line_end = (bp_line_end[0] + 40 * math.cos(
@@ -113,11 +113,14 @@ class Robot():
             mp_line_end = (mp_line_end[0], PITCH_INDICATOR_CENTER[1])
         if tp_line_end[1] > PITCH_INDICATOR_CENTER[1]:
             tp_line_end = (tp_line_end[0], PITCH_INDICATOR_CENTER[1])
-        pygame.draw.line(screen, (0, 0, 0), (PITCH_INDICATOR_CENTER[0] - 50, PITCH_INDICATOR_CENTER[1]),
+        compass = pygame.image.load('protractor.jpg')
+        screen.blit(pygame.transform.smoothscale(compass, (201, 110)), (YAW_INDICATOR_CENTER[0] - 100, YAW_INDICATOR_CENTER[1] - 5))
+        pygame.draw.aaline(screen, (0, 0, 0), yaw_line_end, YAW_INDICATOR_CENTER)
+        pygame.draw.aaline(screen, (0, 0, 0), (PITCH_INDICATOR_CENTER[0] - 50, PITCH_INDICATOR_CENTER[1]),
                          (PITCH_INDICATOR_CENTER[0] + 50, PITCH_INDICATOR_CENTER[1]), 2)
-        pygame.draw.line(screen, (0, 0, 0), bp_line_end, PITCH_INDICATOR_CENTER)
-        pygame.draw.line(screen, (0, 0, 0), mp_line_end, bp_line_end)
-        pygame.draw.line(screen, (0, 0, 0), tp_line_end, mp_line_end)
+        pygame.draw.aaline(screen, (0, 0, 0), bp_line_end, PITCH_INDICATOR_CENTER)
+        pygame.draw.aaline(screen, (0, 0, 0), mp_line_end, bp_line_end)
+        pygame.draw.aaline(screen, (0, 0, 0), tp_line_end, mp_line_end)
 
 
 robot = Robot('COM3')
