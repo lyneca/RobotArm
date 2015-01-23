@@ -71,11 +71,9 @@ class Robot():
                 ready = True
             elif line[0] == '$':
                 if ready:
-                    print(line.split()[1:])
                     self.gestures[name] = ' '.join(line.split()[1:])
                     ready = False
         g_file.close()
-        print(self.gestures)
         try:
             self.serial = serial.Serial(port)
             self.send("import pyb")
